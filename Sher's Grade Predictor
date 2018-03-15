@@ -1,0 +1,210 @@
+import scipy.stats as ss
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+# Data Value Gaussianator Function: Takes a data value as mean and forms a 
+# gaussian dist. around that mean and outputs a random num from the data
+# originally BASED ON MEAN AROUND 5
+def DVG(mean_value):
+    import random
+    if mean_value > 10: 
+        x = np.arange(mean_value - 10, mean_value + 11)
+        xU, xL = x + 0.5, x - 0.5 
+        prob = ss.norm.cdf(xU, loc = mean_value, scale = 3) - ss.norm.cdf(xL, loc = mean_value, scale = 3)
+        prob = prob / prob.sum() #normalize the probabilities so their sum is 1
+        nums = np.random.choice(x, size = 10000, p = prob)
+        ### plt.hist(nums, bins = len(x))###
+        return nums
+    else: 
+        x = np.arange(mean_value - 10, mean_value + 11)
+        xU, xL = x + 0.5, x - 0.5 
+        prob = ss.norm.cdf(xU, loc = mean_value, scale = 3) - ss.norm.cdf(xL, loc = mean_value, scale = 3)
+        prob = prob / prob.sum() #normalize the probabilities so their sum is 1
+        numbers = np.random.choice(x, size = 10000, p = prob)
+        ### plt.hist(nums, bins = len(x))###
+        return [nums for nums in numbers if nums > 0]
+
+
+
+## DATA SET IMPORT
+df = pd.read_csv('SherData.csv')
+
+sleep_col_df = pd.DataFrame(df.TofSleepBlock.str.split('-',1).tolist(),
+                  columns = ['Sleep Start', 'Sleep Stop'])
+
+piece1 = sleep_col_df
+
+piece2 = pd.DataFrame(df.iloc[0,1:]).T
+
+
+
+new_df = pd.concat([piece1, piece2], axis = 1)     ## Recombine both dataframe pieces  
+
+
+
+
+
+
+
+## to change from HH:MM to hour value integer
+def get_hours(time_str):
+    hours, minutes = time_str.split(':')
+    
+    return (int(hours) + int(minutes)/60)
+ 
+    
+    
+
+sleep_start = new_df.iloc[0, new_df.columns.get_loc('Sleep Start')]
+get_hours(sleep_start) 
+new_df.iloc[0, new_df.columns.get_loc('Sleep Start')] = get_hours(sleep_start)
+## sleep hours have been changed
+
+sleep_stop = new_df.iloc[0, new_df.columns.get_loc('Sleep Stop')]
+get_hours(sleep_stop) 
+new_df.iloc[0, new_df.columns.get_loc('Sleep Stop')] = get_hours(sleep_stop)
+## sleep hours have been changed
+
+
+
+
+
+
+
+# ISOLATING: Organizing dataset by splitting into categorical and regular data
+reg_df1 = pd.DataFrame(new_df.iloc[:,0:5])
+reg_df2 = pd.DataFrame(new_df.iloc[:,6:9])
+reg_df3 = pd.DataFrame(new_df.iloc[:,10:12])
+reg_df4 = pd.DataFrame(new_df.iloc[:,16:19])
+reg_frames = [reg_df1, reg_df2, reg_df3, reg_df4]
+reg_df = pd.concat(reg_frames, axis = 1) # THIS IS THE REGULAR DATASET
+
+cat_df1 = pd.DataFrame(new_df.iloc[:,5])
+cat_df2 = pd.DataFrame(new_df.iloc[:,9])
+cat_df3 = pd.DataFrame(new_df.iloc[:,12:16])
+cat_frames = [cat_df1, cat_df2, cat_df3]
+cat_df = pd.concat(cat_frames, axis = 1) # THIS IS CATEGORICAL DATASET
+
+
+
+
+
+
+
+
+
+## Converting To CSV For OBSERVATION SIMULATION/ADDING
+reg_df.to_csv('reg_df.csv', index = False)
+cat_df.to_csv('cat_df.csv', index = False)
+    ## Appending Data for REG DATA
+import csv
+import random
+
+obs_num = 5
+
+for i in range(obs_num):
+    with open('reg_df.csv','a') as rowFile:
+        rowfileWriter = csv.writer(rowFile, lineterminator = '\n')
+    
+        count = 0
+        array = []
+    
+        while count < 13: # Enter Number of columns  in Dataset
+        
+            mean_value = reg_df.iloc[0,0 + count]
+            DVG(mean_value)
+            nums = DVG(mean_value)
+            #nums = # the value of each unit observation per column
+            array.append(random.choice(nums))
+            
+
+            
+            count = count + 1
+               
+        rowfileWriter.writerow(array)
+        
+        
+        
+        
+        
+        
+        
+        
+    
+## TURNING CAT DF to dataframe- AFTER INPUTTING MY OWN VALUES
+
+cat_df = pd.read_csv('cat_df.csv')
+ # Encoding CAT data frame..
+
+cat_cols = cat_df.columns[:] # returns names of columns
+
+cat_df = pd.get_dummies(cat_df, columns = cat_cols, drop_first = True)
+
+
+
+## Combining cat data and reg data
+reg_df = pd.read_csv('reg_df.csv')
+frames = [reg_df, cat_df]
+new_df = pd.concat(frames,axis = 1)
+
+
+## Calulating average of each column
+avg = []
+
+
+for col_name in new_df.columns[:]:
+    col_array = new_df.loc[:,col_name].values
+    avg.append(np.average(col_array))
+
+avg_df = pd.DataFrame(avg).T
+avg_df.columns = new_df.columns[:]
+
+
+
+## Converting To CSV For OBSERVATION SIMULATION/ADDING
+avg_df.to_csv('avg_df.csv', index = False)
+
+
+    ## Appending Data for avg dataframe
+import csv
+import random
+
+obs_num = 5
+
+for i in range(obs_num):
+    with open('avg_df.csv','a') as rowFile:
+        rowfileWriter = csv.writer(rowFile, lineterminator = '\n')
+    
+        count = 0
+        array = []
+    
+        while count < 24: # Enter Number of columns  in Dataset
+        
+            mean_value = avg_df.iloc[0,0 + count]
+            DVG(mean_value)
+            nums = DVG(mean_value)
+            #nums = # the value of each unit observation per column
+            array.append(random.choice(nums))
+            
+
+            
+            count = count + 1
+               
+        rowfileWriter.writerow(array)
+
+
+# making fake grades to add to avg data frame
+grades = [8, 7.9, 6.5, 60, 7.2, 7.2]
+grades = pd.DataFrame(grades)
+grades.columns = [']
+avg_df = pd.read_csv('avg_df.csv')
+
+frames = [grades, avg_df]
+sher_df = pd.concat(frames, axis = 1)
+
+sher_df.to_csv('sher_df.csv', index = False)
+        
+grades.to_csv('grades.csv')
+
