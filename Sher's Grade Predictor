@@ -196,10 +196,12 @@ for i in range(obs_num):
         rowfileWriter.writerow(array)
         
 fake_grade = []        
-for fake_grade in range(20) 
-    fake_grade = rand.int(1,11)
-
+for x in range(20):
+    fake_grade = random.randint(1,11)
+    
 # making fake grades to add to avg data frame
+
+grades.append(fake_grade)
 grades = [8, 7.9, 6.5, 60, 7.2, 7.2]
 grades = pd.DataFrame(grades)
 grades.columns = [']
